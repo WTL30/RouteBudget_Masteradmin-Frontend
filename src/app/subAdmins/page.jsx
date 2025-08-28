@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
@@ -184,7 +185,7 @@ const SubAdminManagementPage = () => {
     console.log("Editing subAdmin:", subAdmin) // Check what data we're starting with
     setFormMode("edit")
     setFormData({
-      _id: subAdmin._id,
+      id: subAdmin.id || subAdmin._id || subAdmin.Id, 
       name: subAdmin.name || "",
       email: subAdmin.email || "",
       role: subAdmin.role || "",
@@ -281,7 +282,7 @@ const SubAdminManagementPage = () => {
       const endpoint =
         formMode === "add"
           ? "https://api.routebudget.com/api/admin/addNewSubAdmin"
-          : `https://api.routebudget.com/api/admin/updateSubAdmin/${formData._id}`
+          : `https://api.routebudget.com/api/admin/updateSubAdmin/${formData.id}`
 
       const response = await axios({
         method: formMode === "add" ? "post" : "put",
@@ -335,7 +336,7 @@ const SubAdminManagementPage = () => {
       setSignaturePreview("")
     } else {
       // For edit, reset to original values
-      const original = subAdmins.find((sa) => sa._id === formData._id)
+      const original = subAdmins.find((sa) => sa.id === formData.id)
       if (original) {
         setFormData({
           ...original,
@@ -355,7 +356,7 @@ const SubAdminManagementPage = () => {
     const confirmDelete = window.confirm(`Are you sure you want to delete ${subAdmin.name}?`)
     if (confirmDelete) {
       try {
-        const response = await axios.delete(`https://api.routebudget.com/api/admin/deleteSubAdmin/${subAdmin._id}`)
+        const response = await axios.delete(`https://api.routebudget.com/api/admin/deleteSubAdmin/${subAdmin.id}`)
         if (response.status === 200) {
           toast.success("Sub-admin deleted successfully!")
           fetchSubAdmins() // Refresh the data
@@ -450,7 +451,7 @@ const SubAdminManagementPage = () => {
           <div className="sm:hidden space-y-2">
             {currentSubAdmins.map((subAdmin) => (
               <motion.div
-                key={subAdmin._id}
+                key={subAdmin.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.01 }}
@@ -517,7 +518,7 @@ const SubAdminManagementPage = () => {
                     </button>
                   </div>
                   <button
-                    onClick={() => toggleBlockStatus(subAdmin._id)}
+                    onClick={() => toggleBlockStatus(subAdmin.id)}
                     className={`px-2 py-1 text-xs rounded-md ${
                       subAdmin.status === "Active" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
                     }`}
@@ -549,7 +550,7 @@ const SubAdminManagementPage = () => {
               <tbody>
                 {currentSubAdmins.map((subAdmin) => (
                   <motion.tr
-                    key={subAdmin._id}
+                    key={subAdmin.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.01 }}
@@ -583,7 +584,7 @@ const SubAdminManagementPage = () => {
                     </td>
                     <td className="p-2 sm:p-3">
                       <button
-                        onClick={() => toggleBlockStatus(subAdmin._id)}
+                        onClick={() => toggleBlockStatus(subAdmin.id)}
                         className={`px-2 py-1 text-xs rounded-md ${
                           subAdmin.status === "Active"
                             ? "bg-red-600 hover:bg-red-700"
@@ -693,10 +694,7 @@ const SubAdminManagementPage = () => {
                     {viewSubAdmin.status}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-gray-700">
-                  <span className="text-gray-400">Company Prefix</span>
-                  <span>{viewSubAdmin.companyPrefix || "N/A"}</span>
-                </div>
+               
                 <div className="flex justify-between py-2">
                   <span className="text-gray-400">Created</span>
                   <span>{new Date(viewSubAdmin.createdAt).toLocaleDateString()}</span>
@@ -812,7 +810,7 @@ const SubAdminManagementPage = () => {
                       required
                     >
                       <option value="">Select role</option>
-                      <option value="Admin">Admin</option>
+                      <option value="subadmin">Admin</option>
                     </select>
                   </div>
 
@@ -829,17 +827,7 @@ const SubAdminManagementPage = () => {
                     </select>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium mb-1">Company Prefix</label>
-                    <input
-                      type="text"
-                      name="companyPrefix"
-                      value={formData.companyPrefix || ""}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-sm"
-                      placeholder="Company prefix"
-                    />
-                  </div>
+                 
 
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1">Company Logo</label>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 // ✅ Add favicon to metadata
 export const metadata = {
-  title: "Cab Expengo",
+  title: "RouteBudget",
   description: "Cab management dashboard",
   icons: {
     icon: "/favicon.ico", // 👈 this should match your favicon file in /public
