@@ -185,7 +185,7 @@ const SubAdminManagementPage = () => {
     console.log("Editing subAdmin:", subAdmin) // Check what data we're starting with
     setFormMode("edit")
     setFormData({
-      id: subAdmin.id || subAdmin._id || subAdmin.Id, 
+      id: subAdmin.id || subAdmin._id || subAdmin.Id,
       name: subAdmin.name || "",
       email: subAdmin.email || "",
       role: subAdmin.role || "",
@@ -234,17 +234,18 @@ const SubAdminManagementPage = () => {
 
   const handleFormSubmit = async () => {
     // Validate required fields
-    const emailRegex = /@gmail\.com$/i
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error("Invalid Email")
+      // toast.error("Invalid Email Address");
+      return;
+    }
+
+    const phoneRegex = /^\d+$/
+    if (!phoneRegex.test(formData.phone)) {
+      // toast.error("Phone must contain only digits")
       return
     }
 
-    const phoneRegex = /^\d{10}$/
-    if (!phoneRegex.test(formData.phone)) {
-      toast.error("Enter Valid Phone Number")
-      return
-    }
 
     if (!formData.name || !formData.role) {
       toast.error("Please fill all required fields")
@@ -477,9 +478,8 @@ const SubAdminManagementPage = () => {
                     </div>
                   </div>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      subAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
-                    }`}
+                    className={`text-xs px-2 py-1 rounded-full ${subAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
+                      }`}
                   >
                     {subAdmin.status}
                   </span>
@@ -519,9 +519,8 @@ const SubAdminManagementPage = () => {
                   </div>
                   <button
                     onClick={() => toggleBlockStatus(subAdmin.id)}
-                    className={`px-2 py-1 text-xs rounded-md ${
-                      subAdmin.status === "Active" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-                    }`}
+                    className={`px-2 py-1 text-xs rounded-md ${subAdmin.status === "Active" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
+                      }`}
                   >
                     {subAdmin.status === "Active" ? "Block" : "Unblock"}
                   </button>
@@ -562,9 +561,8 @@ const SubAdminManagementPage = () => {
                     <td className="p-2 sm:p-3 text-sm">{subAdmin.role}</td>
                     <td className="p-2 sm:p-3">
                       <span
-                        className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          subAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
-                        }`}
+                        className={`inline-block px-2 py-1 text-xs rounded-full ${subAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
+                          }`}
                       >
                         {subAdmin.status}
                       </span>
@@ -585,11 +583,10 @@ const SubAdminManagementPage = () => {
                     <td className="p-2 sm:p-3">
                       <button
                         onClick={() => toggleBlockStatus(subAdmin.id)}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          subAdmin.status === "Active"
-                            ? "bg-red-600 hover:bg-red-700"
-                            : "bg-green-600 hover:bg-green-700"
-                        }`}
+                        className={`px-2 py-1 text-xs rounded-md ${subAdmin.status === "Active"
+                          ? "bg-red-600 hover:bg-red-700"
+                          : "bg-green-600 hover:bg-green-700"
+                          }`}
                       >
                         {subAdmin.status === "Active" ? "Block" : "Unblock"}
                       </button>
@@ -687,14 +684,13 @@ const SubAdminManagementPage = () => {
                 <div className="flex justify-between py-2 border-b border-gray-700">
                   <span className="text-gray-400">Status</span>
                   <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      viewSubAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
-                    }`}
+                    className={`px-2 py-1 text-xs rounded-full ${viewSubAdmin.status === "Active" ? "bg-green-700" : "bg-red-700"
+                      }`}
                   >
                     {viewSubAdmin.status}
                   </span>
                 </div>
-               
+
                 <div className="flex justify-between py-2">
                   <span className="text-gray-400">Created</span>
                   <span>{new Date(viewSubAdmin.createdAt).toLocaleDateString()}</span>
@@ -766,9 +762,9 @@ const SubAdminManagementPage = () => {
                       placeholder="Email address"
                       required
                     />
-                    {formData.email && !/@gmail\.com$/i.test(formData.email) && (
+                    {/* {formData.email && !/@gmail\.com$/i.test(formData.email) && (
                       <p className="text-red-500 text-xs mt-1">Enter Valid Email </p>
-                    )}
+                    )} */}
                   </div>
 
                   <div>
@@ -795,9 +791,9 @@ const SubAdminManagementPage = () => {
                       placeholder="Phone number"
                       required
                     />
-                    {formData.phone && !/^\d{10}$/.test(formData.phone) && (
+                    {/* {formData.phone && !/^\d{10}$/.test(formData.phone) && (
                       <p className="text-red-500 text-xs mt-1">Phone number must be exactly 10 digits</p>
-                    )}
+                    )} */}
                   </div>
 
                   <div>
@@ -827,7 +823,7 @@ const SubAdminManagementPage = () => {
                     </select>
                   </div>
 
-                 
+
 
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1">Company Logo</label>
