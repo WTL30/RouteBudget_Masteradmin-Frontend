@@ -42,7 +42,7 @@ const AuthPage = () => {
     setLoading(true)
 
     try {
-      const res = await axios.post("https://api.routebudget.com/api/master/login-master-admin", {
+      const res = await axios.post("http://localhost:5000/api/master/login-master-admin", {
         email,
         password,
       })
@@ -90,7 +90,7 @@ const AuthPage = () => {
     setForgotLoading(true)
 
     try {
-      const res = await axios.post("https://api.routebudget.com/api/master/send-otp", {
+      const res = await axios.post("http://localhost:5000/api/master/send-otp", {
         email: forgotEmail,
       })
 
@@ -122,7 +122,7 @@ const AuthPage = () => {
         return
       }
 
-      const res = await axios.post("https://api.routebudget.com/api/master/verify-otp", {
+      const res = await axios.post("http://localhost:5000/api/master/verify-otp", {
         email,
         otp,
       })
@@ -158,7 +158,7 @@ const AuthPage = () => {
         return
       }
 
-      const res = await axios.post("https://api.routebudget.com/api/master/reset-password", {
+      const res = await axios.post("http://localhost:5000/api/master/reset-password", {
         email,
         password: newPassword,
       })
