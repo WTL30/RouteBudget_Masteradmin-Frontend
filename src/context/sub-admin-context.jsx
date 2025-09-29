@@ -10,7 +10,7 @@ export const SubAdminProvider = ({ children }) => {
   // Fetch sub-admins from API
   const fetchSubAdmins = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/admin/getAllSubAdmins")
+      const response = await fetch("https://api.routebudget.com/api/admin/getAllSubAdmins")
       if (response.ok) {
         const data = await response.json()
         // Add default settings to each sub-admin

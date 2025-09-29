@@ -26,7 +26,7 @@
 //     const fetchSubAdmin = async () => {
 //       try {
 //         const response = await axios.get(
-//           "http://localhost:5000/api/admin/sub-admin-count"
+//           "https://api.routebudget.com/api/admin/sub-admin-count"
 //         );
 //         console.log("API Response:", response.data); // Debugging log
 
@@ -55,7 +55,7 @@
 //     const fetchDrivers = async () => {
 //       try {
 //         const response = await axios.get(
-//           "http://localhost:5000/api/admin/driver-count"  //http://localhost:5000
+//           "https://api.routebudget.com/api/admin/driver-count"  //https://api.routebudget.com
 //         ); // Ensure correct backend URL
 //         console.log("API Response:", response.data); // Debugging log
 //         console.log("hello");
@@ -83,7 +83,7 @@
 //     const fetchCabs = async () => {
 //       try {
 //         const response = await axios.get(
-//           "http://localhost:5000/api/admin/cab-count"
+//           "https://api.routebudget.com/api/admin/cab-count"
 //         ); // Ensure correct backend URL
 //         console.log("API Response:", response.data); // Debugging log
 //         if (response.data && typeof response.data.count === "number") {
@@ -110,7 +110,7 @@
 //       try {
 //         setExpenseLoading(true);
 //         const response = await axios.get(
-//           "http://localhost:5000/api/admin/getExpense"
+//           "https://api.routebudget.com/api/admin/getExpense"
 //         );
 
 //         if (response.data.success && Array.isArray(response.data.data)) {
@@ -150,7 +150,7 @@
 //       setActivityLoading(true);
 
 //       // Fetch recent expense activities from the API
-//       const response = await axios.get("http://localhost:5000/api/expenses");
+//       const response = await axios.get("https://api.routebudget.com/api/expenses");
 
 //       if (response.data && Array.isArray(response.data)) {
 //         // Format the activities data
@@ -600,7 +600,7 @@ const MasterAdminDashboardBlackTheme =  () => {
     const fetchSubAdmin = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/admin/sub-admin-count"
+          "https://api.routebudget.com/api/admin/sub-admin-count"
         );
         console.log("API Response:", response.data); // Debugging log
 
@@ -629,7 +629,7 @@ const MasterAdminDashboardBlackTheme =  () => {
     const fetchDrivers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/admin/driver-count"
+          "https://api.routebudget.com/api/admin/driver-count"
         ); // Ensure correct backend URL
         console.log("API Response:", response.data); // Debugging log
         console.log("hello");
@@ -657,7 +657,7 @@ const MasterAdminDashboardBlackTheme =  () => {
     const fetchCabs = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/admin/cab-count"
+          "https://api.routebudget.com/api/admin/cab-count"
         ); // Ensure correct backend URL
         console.log("API Response:", response.data); // Debugging log
         if (response.data && typeof response.data.count === "number") {
@@ -684,7 +684,7 @@ const MasterAdminDashboardBlackTheme =  () => {
       try {
         setExpenseLoading(true);
         const response = await axios.get(
-          "http://localhost:5000/api/admin/getExpense"
+          "https://api.routebudget.com/api/admin/getExpense"
         );
 
         if (response.data.success && Array.isArray(response.data.data)) {
@@ -724,7 +724,7 @@ const MasterAdminDashboardBlackTheme =  () => {
       setActivityLoading(true);
 
       // Fetch recent expense activities from the API
-      const response = await axios.get("http://localhost:5000/api/expenses");
+      const response = await axios.get("https://api.routebudget.com/api/expenses");
 
       if (response.data && Array.isArray(response.data)) {
         // Format the activities data

@@ -64,7 +64,7 @@ const SubAdminManagementPage = () => {
   const fetchSubAdmins = async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/getAllSubAdmins")
+      const response = await axios.get("https://api.routebudget.com/api/admin/getAllSubAdmins")
       if (response.status === 200) {
         setSubAdmins(response.data.subAdmins || [])
       }
@@ -149,7 +149,7 @@ const SubAdminManagementPage = () => {
   // Block/Unblock
   const toggleBlockStatus = async (id) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/admin/toggle-block/${id}`)
+      const res = await axios.put(`https://api.routebudget.com/api/admin/toggle-block/${id}`)
       if (res.status === 200) {
         toast.success(`Sub-admin ${res.data.status}`)
         fetchSubAdmins()
@@ -282,8 +282,8 @@ const SubAdminManagementPage = () => {
 
       const endpoint =
         formMode === "add"
-          ? "http://localhost:5000/api/admin/addNewSubAdmin"
-          : `http://localhost:5000/api/admin/updateSubAdmin/${formData.id}`
+          ? "https://api.routebudget.com/api/admin/addNewSubAdmin"
+          : `https://api.routebudget.com/api/admin/updateSubAdmin/${formData.id}`
 
       const response = await axios({
         method: formMode === "add" ? "post" : "put",
@@ -357,7 +357,7 @@ const SubAdminManagementPage = () => {
     const confirmDelete = window.confirm(`Are you sure you want to delete ${subAdmin.name}?`)
     if (confirmDelete) {
       try {
-        const response = await axios.delete(`http://localhost:5000/api/admin/deleteSubAdmin/${subAdmin.id}`)
+        const response = await axios.delete(`https://api.routebudget.com/api/admin/deleteSubAdmin/${subAdmin.id}`)
         if (response.status === 200) {
           toast.success("Sub-admin deleted successfully!")
           fetchSubAdmins() // Refresh the data

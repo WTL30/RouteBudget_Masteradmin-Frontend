@@ -11,7 +11,7 @@ const SubscriptionsPage = () => {
   // Fetch trial subscriptions
   const fetchTrialSubscriptions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/get-free-trial-subAdmins');
+      const response = await fetch('https://api.routebudget.com/api/admin/get-free-trial-subAdmins');
       const data = await response.json();
       
       if (data.success) {
@@ -38,7 +38,7 @@ const SubscriptionsPage = () => {
   // Fetch paid subscriptions
   const fetchPaidSubscriptions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/get-paid-subAdmins');
+      const response = await fetch('https://api.routebudget.com/api/admin/get-paid-subAdmins');
       const data = await response.json();
       
       if (data.success) {
