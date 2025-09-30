@@ -128,7 +128,7 @@ export default function SystemSettingsPage() {
     const updatePermissions = async () => {
       try {
         const response = await axios.post(
-          "http://localhost:5000/api/subAdminPermissions/sub-admin",
+          "https://masteradmin.routebudget.com/api/subAdminPermissions/sub-admin",
           {
             subAdminId: subDetail._id,
             name: subDetail.name,

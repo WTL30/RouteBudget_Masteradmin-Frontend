@@ -79,9 +79,9 @@
 //   // };
 
 //   // API base URL - you can change this to match your environment
-//   const API_BASE_URL = "http://localhost:5000/api/admin/getExpense"
-//   const API_BASE_URL1 = "http://localhost:5000/api/admin/getAllSubAdmins"
-//   const API_BASE_URL2 = `http://localhost:5000/api/master/get-cab-details`
+//   const API_BASE_URL = "https://masteradmin.routebudget.com/api/admin/getExpense"
+//   const API_BASE_URL1 = "https://masteradmin.routebudget.com/api/admin/getAllSubAdmins"
+//   const API_BASE_URL2 = `https://masteradmin.routebudget.com/api/master/get-cab-details`
 
 
 //   const handleViewCabDetails = async (id) => {
@@ -834,9 +834,9 @@ export default function ExpenseDashboard() {
   const [expenseBreakdown, setExpenseBreakdown] = useState([]);
   const [cabExpenses, setCabExpenses] = useState([]);
 
-  const API_BASE_URL = "http://localhost:5000/api/admin/getExpense";
-  const API_BASE_URL1 = "http://localhost:5000/api/admin/getAllSubAdmins";
-  const API_BASE_URL2 = "http://localhost:5000/api/master/get-cab-details";
+  const API_BASE_URL = "https://masteradmin.routebudget.com/api/admin/getExpense";
+  const API_BASE_URL1 = "https://masteradmin.routebudget.com/api/admin/getAllSubAdmins";
+  const API_BASE_URL2 = "https://masteradmin.routebudget.com/api/master/get-cab-details";
 
   const handleViewCabDetails = async (id) => {
     try {
