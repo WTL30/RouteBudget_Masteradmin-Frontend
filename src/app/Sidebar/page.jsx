@@ -223,7 +223,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -238,7 +238,6 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const pathname = usePathname();
   const router = useRouter();
   const [active, setActive] = useState("Dashboard");
@@ -246,38 +245,21 @@ export default function Sidebar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginPage, setIsLoginPage] = useState(false);
 
-  // ✅ Fix: Only access window inside useEffect
+  // ✅ Optimized: Combined auth check logic
+  const checkAuth = useCallback(() => {
+    const hasLoginFlag = localStorage.getItem("isLoggedIn") === "true";
+    const hasToken = !!localStorage.getItem("token");
+    setIsAuthenticated(hasLoginFlag || hasToken);
+  }, []);
+
+  // ✅ Optimized: Single useEffect for auth and path checking
   useEffect(() => {
     if (typeof window !== "undefined") {
       setIsLoginPage(window.location.pathname === "/");
-
-      const checkAuth = () => {
-        // Check for both isLoggedIn flag and token as fallback
-        const hasLoginFlag = localStorage.getItem("isLoggedIn") === "true";
-        const hasToken = !!localStorage.getItem("token");
-        setIsAuthenticated(hasLoginFlag || hasToken);
-      };
-
       checkAuth();
-
-      // Check auth state whenever this effect runs (on path change)
-      return () => {};
-    }
-  }, [pathname]);
-  
-  // Add another effect to re-check auth on focus and storage events
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const checkAuth = () => {
-        const hasLoginFlag = localStorage.getItem("isLoggedIn") === "true";
-        const hasToken = !!localStorage.getItem("token");
-        setIsAuthenticated(hasLoginFlag || hasToken);
-      };
 
       // Storage events (for changes in other tabs)
       window.addEventListener("storage", checkAuth);
-      
-      // Re-check when window gets focus
       window.addEventListener("focus", checkAuth);
       
       return () => {
@@ -285,22 +267,12 @@ export default function Sidebar() {
         window.removeEventListener("focus", checkAuth);
       };
     }
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("mousemove", handleMouseMove);
-      return () => window.removeEventListener("mousemove", handleMouseMove);
-    }
-  }, []);
+  }, [pathname, checkAuth]);
 
   const shouldShowSidebar = !isLoginPage && isAuthenticated;
 
-  const menuItems = [
+  // ✅ Optimized: Memoize menu items to prevent recreation on every render
+  const menuItems = useMemo(() => [
     { name: "Dashboard", icon: <Home size={20} />, route: "../Dashboard" },
     { name: "Sub-Admins", icon: <Users size={20} />, route: "../subAdmins" },
     {
@@ -308,11 +280,6 @@ export default function Sidebar() {
       icon: <ClipboardList size={20} />,
       route: "../Expensen-Management",
     },
-    // {
-    //   name: "System Settings",
-    //   icon: <Settings size={20} />,
-    //   route: "../SystemSettings",
-    // },
     {
       name: "Analytics",
       icon: <BarChart size={20} />,
@@ -321,32 +288,28 @@ export default function Sidebar() {
     {
       name: "Notifications",
       icon: <Bell size={20} />,
-      route: "../notification-alerts",
+      route: "../Notification-Alerts",
     },
     {
       name: "Subscriptions",
       icon: <Users size={20} />,
       route: "../Subscriptions",
     },
-  ];
+  ], []);
 
-  const handleLogout = () => {
-    // Clear all authentication data
+  // ✅ Optimized: Memoize logout handler
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("authToken");
     localStorage.removeItem("token");
     localStorage.removeItem("id");
     setIsAuthenticated(false);
     router.push("/");
-  };
+  }, [router]);
 
   return (
-    <div className="flex relative" style={{ cursor: "none" }}>
-      {/* Custom cursor div */}
-      <div
-        style={{ left: cursorPos.x, top: cursorPos.y }}
-        className="pointer-events-none fixed w-6 h-6 rounded-full border-2 border-indigo-500 -translate-x-1/2 -translate-y-1/2 z-[9999] transition-transform duration-150"
-      />
+    <div className="flex relative">
+      {/* ✅ Removed: Expensive custom cursor tracking for better performance */}
 
       {/* Sidebar content */}
       {shouldShowSidebar && (

@@ -1,7 +1,6 @@
 
 "use client"
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import axios from "axios"
 import { Eye, Edit2, Trash2, Search, Download, User, Image } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
@@ -15,6 +14,7 @@ const SubAdminManagementPage = () => {
   const [subAdmins, setSubAdmins] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [deletingId, setDeletingId] = useState(null) // Track which item is being deleted
 
   // Search and filter
   const [searchQuery, setSearchQuery] = useState("")
@@ -29,6 +29,7 @@ const SubAdminManagementPage = () => {
   const [viewSubAdmin, setViewSubAdmin] = useState(null)
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false)
   const [formMode, setFormMode] = useState("add") // "add" or "edit"
+  const [isSubmitting, setIsSubmitting] = useState(false) // Loading state for form submission
   const [formData, setFormData] = useState({
     // companyPrefix: "",
     name: "",
@@ -60,11 +61,11 @@ const SubAdminManagementPage = () => {
     router.push("/SystemSettings")
   }
 
-  // Fetch sub-admins from the database
-  const fetchSubAdmins = async () => {
+  // ✅ Optimized: Memoize fetch function to prevent recreation
+  const fetchSubAdmins = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get("https://api.routebudget.com/api/admin/getAllSubAdmins")
+      const response = await axios.get("http://localhost:5000/api/admin/getAllSubAdmins")
       if (response.status === 200) {
         setSubAdmins(response.data.subAdmins || [])
       }
@@ -75,44 +76,52 @@ const SubAdminManagementPage = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   // Load sub-admins on component mount
   useEffect(() => {
     fetchSubAdmins()
   }, [])
 
-  // Filtering + searching
-  const filteredSubAdmins = subAdmins.filter((sa) => {
-    const query = searchQuery.toLowerCase()
-    const matchesSearch =
-      sa.name?.toLowerCase().includes(query) ||
-      sa.email?.toLowerCase().includes(query) ||
-      sa.role?.toLowerCase().includes(query) ||
-      sa.status?.toLowerCase().includes(query)
-    const matchesStatus = filterStatus === "All" || sa.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
+  // ✅ Optimized: Memoize filtered data to prevent recalculation on every render
+  const filteredSubAdmins = useMemo(() => {
+    return subAdmins.filter((sa) => {
+      const query = searchQuery.toLowerCase()
+      const matchesSearch =
+        sa.name?.toLowerCase().includes(query) ||
+        sa.email?.toLowerCase().includes(query) ||
+        sa.role?.toLowerCase().includes(query) ||
+        sa.status?.toLowerCase().includes(query)
+      const matchesStatus = filterStatus === "All" || sa.status === filterStatus
+      return matchesSearch && matchesStatus
+    })
+  }, [subAdmins, searchQuery, filterStatus])
 
-  // Pagination calculations
-  const totalItems = filteredSubAdmins.length
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentSubAdmins = filteredSubAdmins.slice(startIndex, endIndex)
+  // ✅ Optimized: Memoize pagination calculations
+  const paginationData = useMemo(() => {
+    const totalItems = filteredSubAdmins.length
+    const totalPages = Math.ceil(totalItems / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const currentSubAdmins = filteredSubAdmins.slice(startIndex, endIndex)
+    return { totalItems, totalPages, startIndex, endIndex, currentSubAdmins }
+  }, [filteredSubAdmins, currentPage, itemsPerPage])
 
-  // Handlers
-  const handleSearchChange = (e) => {
+  const { totalItems, totalPages, startIndex, endIndex, currentSubAdmins } = paginationData
+
+  // ✅ Optimized: Memoize handlers to prevent recreation on every render
+  const handleSearchChange = useCallback((e) => {
     setSearchQuery(e.target.value)
     setCurrentPage(1)
-  }
+  }, [])
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = useCallback((e) => {
     setFilterStatus(e.target.value)
     setCurrentPage(1)
-  }
+  }, [])
 
-  const handleExport = () => {
+  // ✅ Optimized: Memoize export function
+  const handleExport = useCallback(() => {
     // Convert data to CSV
     const headers = ["Name", "Email", "Role", "Status", "Phone"]
     const csvData = [
@@ -132,37 +141,57 @@ const SubAdminManagementPage = () => {
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+    window.URL.revokeObjectURL(url) // ✅ Clean up memory
     toast.success("Export successful")
-  }
+  }, [filteredSubAdmins])
 
-  // View Modal
-  const handleView = (subAdmin) => {
+  // ✅ Optimized: Memoize view modal handlers
+  const handleView = useCallback((subAdmin) => {
     setViewSubAdmin(subAdmin)
     setIsViewModalOpen(true)
-  }
+  }, [])
 
-  const closeViewModal = () => {
+  const closeViewModal = useCallback(() => {
     setIsViewModalOpen(false)
     setViewSubAdmin(null)
-  }
+  }, [])
 
-  // Block/Unblock
-  const toggleBlockStatus = async (id) => {
+  // ✅ Optimized: Fast block/unblock with optimistic updates
+  const toggleBlockStatus = useCallback(async (id) => {
     try {
-      const res = await axios.put(`https://api.routebudget.com/api/admin/toggle-block/${id}`)
+      // ✅ Optimistic update - update UI immediately
+      const originalSubAdmins = [...subAdmins]
+      setSubAdmins(prev => prev.map(sa => 
+        sa.id === id 
+          ? { ...sa, status: sa.status === "Active" ? "Inactive" : "Active" }
+          : sa
+      ))
+      
+      const res = await axios.put(`http://localhost:5000/api/admin/toggle-block/${id}`)
       if (res.status === 200) {
         toast.success(`Sub-admin ${res.data.status}`)
-        fetchSubAdmins()
+        // No need to fetch again - already updated optimistically
+      } else {
+        // Revert on failure
+        setSubAdmins(originalSubAdmins)
+        toast.error("Failed to update status")
       }
     } catch (error) {
       console.error("Error toggling status:", error)
+      // Revert on error
+      setSubAdmins(prev => prev.map(sa => 
+        sa.id === id 
+          ? { ...sa, status: sa.status === "Active" ? "Inactive" : "Active" }
+          : sa
+      ))
       toast.error("Failed to update status")
     }
-  }
+  }, [subAdmins])
 
   // Add/Edit Modal
   const handleAddNewSubAdmin = () => {
     setFormMode("add")
+    setIsSubmitting(false) // Reset loading state
     setFormData({
       // companyPrefix: "",
       name: "",
@@ -181,9 +210,11 @@ const SubAdminManagementPage = () => {
     setIsAddEditModalOpen(true)
   }
 
-  const handleEdit = (subAdmin) => {
+  // ✅ Optimized: Memoize edit handler
+  const handleEdit = useCallback((subAdmin) => {
     console.log("Editing subAdmin:", subAdmin) // Check what data we're starting with
     setFormMode("edit")
+    setIsSubmitting(false) // Reset loading state
     setFormData({
       id: subAdmin.id || subAdmin._id || subAdmin.Id,
       name: subAdmin.name || "",
@@ -195,7 +226,7 @@ const SubAdminManagementPage = () => {
       companyPrefix: subAdmin.companyPrefix || "",
     })
     setIsAddEditModalOpen(true)
-  }
+  }, [])
 
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -224,33 +255,36 @@ const SubAdminManagementPage = () => {
     }
   }
 
-  const handleFormChange = (e) => {
+  // ✅ Optimized: Memoize form change handler
+  const handleFormChange = useCallback((e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
-  }
+  }, [])
 
-  const handleFormSubmit = async () => {
+  // ✅ Optimized: Fast form submission with loading state
+  const handleFormSubmit = useCallback(async () => {
     // Validate required fields
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      // toast.error("Invalid Email Address");
+      toast.error("Invalid Email Address");
       return;
     }
 
     const phoneRegex = /^\d+$/
     if (!phoneRegex.test(formData.phone)) {
-      // toast.error("Phone must contain only digits")
+      toast.error("Phone must contain only digits")
       return
     }
-
 
     if (!formData.name || !formData.role) {
       toast.error("Please fill all required fields")
       return
     }
+
+    setIsSubmitting(true) // Start loading
 
     try {
       // Create FormData object to handle file uploads
@@ -278,12 +312,10 @@ const SubAdminManagementPage = () => {
         formDataToSend.append("signature", signature)
       }
 
-      console.log("Sending form data with files")
-
       const endpoint =
         formMode === "add"
-          ? "https://api.routebudget.com/api/admin/addNewSubAdmin"
-          : `https://api.routebudget.com/api/admin/updateSubAdmin/${formData.id}`
+          ? "http://localhost:5000/api/admin/addNewSubAdmin"
+          : `http://localhost:5000/api/admin/updateSubAdmin/${formData.id}`
 
       const response = await axios({
         method: formMode === "add" ? "post" : "put",
@@ -294,28 +326,43 @@ const SubAdminManagementPage = () => {
         },
       })
 
-      console.log("API Response:", response.data)
-
       if (response.status === (formMode === "add" ? 201 : 200)) {
         toast.success(`Sub-admin ${formMode === "add" ? "created" : "updated"} successfully!`)
-        fetchSubAdmins() // Refresh the data
+        
+        if (formMode === "add") {
+          // ✅ Optimistic update for new admin - add to list immediately
+          const newSubAdmin = response.data.subAdmin || {
+            id: response.data.id || Date.now(),
+            ...formData,
+            createdAt: new Date().toISOString()
+          }
+          setSubAdmins(prev => [newSubAdmin, ...prev])
+        } else {
+          // ✅ Optimistic update for edit - update existing item
+          setSubAdmins(prev => prev.map(sa => 
+            sa.id === formData.id ? { ...sa, ...formData } : sa
+          ))
+        }
+        
         setIsAddEditModalOpen(false)
+        // ✅ Fetch in background to sync with server (optional)
+        fetchSubAdmins()
       }
     } catch (error) {
       console.error("Error:", error)
       let errorMessage = "An error occurred"
 
       if (error.response) {
-        console.error("Response data:", error.response.data)
         errorMessage = error.response.data.message || `Failed to ${formMode} sub-admin`
       } else if (error.request) {
-        console.error("No response received:", error.request)
         errorMessage = "No response from server"
       }
 
       toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false) // Stop loading
     }
-  }
+  }, [formData, formMode, profileImageFile, companyLogoFile, signature, fetchSubAdmins])
 
   // Reset form
   const handleFormReset = () => {
@@ -352,52 +399,61 @@ const SubAdminManagementPage = () => {
     }
   }
 
-  // Delete
-  const handleDelete = async (subAdmin) => {
+  // ✅ Optimized: Fast delete with optimistic updates
+  const handleDelete = useCallback(async (subAdmin) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete ${subAdmin.name}?`)
     if (confirmDelete) {
+      setDeletingId(subAdmin.id) // Show loading state for this specific item
+      
       try {
-        const response = await axios.delete(`https://api.routebudget.com/api/admin/deleteSubAdmin/${subAdmin.id}`)
+        // ✅ Optimistic update - remove from UI immediately
+        const originalSubAdmins = [...subAdmins]
+        setSubAdmins(prev => prev.filter(sa => sa.id !== subAdmin.id))
+        
+        const response = await axios.delete(`http://localhost:5000/api/admin/deleteSubAdmin/${subAdmin.id}`)
+        
         if (response.status === 200) {
           toast.success("Sub-admin deleted successfully!")
-          fetchSubAdmins() // Refresh the data
+          // No need to fetch again - already updated optimistically
+        } else {
+          // Revert on failure
+          setSubAdmins(originalSubAdmins)
+          toast.error("Failed to delete sub-admin")
         }
       } catch (error) {
         console.error("Error deleting sub-admin:", error)
+        // Revert on error
+        setSubAdmins(prev => [...prev, subAdmin].sort((a, b) => a.id - b.id))
         toast.error("Failed to delete sub-admin")
+      } finally {
+        setDeletingId(null)
       }
     }
-  }
+  }, [subAdmins])
 
-  // Pagination
-  const handlePrevPage = () => {
+  // ✅ Optimized: Memoize pagination handlers
+  const handlePrevPage = useCallback(() => {
     if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
+  }, [currentPage])
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
+  }, [currentPage, totalPages])
 
   return (
     <div className="bg-gray-900 md:ml-60 text-white min-h-screen p-2 sm:p-4 h-[102%] bg-fixed bg-no-repeat overflow-x-hidden">
       <ToastContainer position="top-right" theme="dark" />
 
       {/* Title & Add Button - Stacked on mobile */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 mt-2 sm:mt-4 gap-2 sm:gap-0"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 mt-2 sm:mt-4 gap-2 sm:gap-0">
         <h1 className="text-lg sm:text-xl md:text-2xl font-semibold">Sub Admin Management</h1>
-        <motion.button
+        <button
           onClick={handleAddNewSubAdmin}
-          whileHover={{ scale: 1.05, rotate: 2 }}
-          className="bg-indigo-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md hover:bg-indigo-700 transition-all duration-300 text-sm sm:text-base w-full sm:w-auto"
+          className="bg-indigo-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 text-sm sm:text-base w-full sm:w-auto"
         >
           + Add New Sub Admin
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
       {/* Search, Filter & Export - Stacked on mobile */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3 sm:mb-4">
@@ -451,13 +507,9 @@ const SubAdminManagementPage = () => {
           {/* Mobile Card View */}
           <div className="sm:hidden space-y-2">
             {currentSubAdmins.map((subAdmin) => (
-              <motion.div
+              <div
                 key={subAdmin.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.01 }}
-                transition={{ duration: 0.2 }}
-                className="bg-gray-800 rounded-lg p-3 shadow"
+                className="bg-gray-800 rounded-lg p-3 shadow hover:bg-gray-750 transition-colors duration-150"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -512,9 +564,18 @@ const SubAdminManagementPage = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(subAdmin)}
-                      className="p-1.5 bg-gray-700 rounded-md hover:bg-gray-600"
+                      disabled={deletingId === subAdmin.id}
+                      className={`p-1.5 rounded-md ${
+                        deletingId === subAdmin.id 
+                          ? "bg-gray-600 cursor-not-allowed" 
+                          : "bg-gray-700 hover:bg-gray-600"
+                      }`}
                     >
-                      <Trash2 className="text-red-400" size={14} />
+                      {deletingId === subAdmin.id ? (
+                        <div className="animate-spin rounded-full h-3.5 w-3.5 border border-red-400 border-t-transparent"></div>
+                      ) : (
+                        <Trash2 className="text-red-400" size={14} />
+                      )}
                     </button>
                   </div>
                   <button
@@ -525,7 +586,7 @@ const SubAdminManagementPage = () => {
                     {subAdmin.status === "Active" ? "Block" : "Unblock"}
                   </button>
                 </div>
-              </motion.div>
+              </div>
             ))}
             {currentSubAdmins.length === 0 && (
               <div className="bg-gray-800 rounded-lg p-4 text-center text-gray-400">No sub admins found</div>
@@ -548,13 +609,9 @@ const SubAdminManagementPage = () => {
               </thead>
               <tbody>
                 {currentSubAdmins.map((subAdmin) => (
-                  <motion.tr
+                  <tr
                     key={subAdmin.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
-                    className="border-b border-gray-700"
+                    className="border-b border-gray-700 hover:bg-gray-750 transition-colors duration-150"
                   >
                     <td className="p-2 sm:p-3 text-sm">{subAdmin.name}</td>
                     <td className="p-2 sm:p-3 text-sm truncate max-w-[120px]">{subAdmin.email}</td>
@@ -575,8 +632,16 @@ const SubAdminManagementPage = () => {
                         <button onClick={() => handleEdit(subAdmin)}>
                           <Edit2 className="text-blue-400 hover:text-blue-300" size={16} />
                         </button>
-                        <button onClick={() => handleDelete(subAdmin)}>
-                          <Trash2 className="text-red-400 hover:text-red-300" size={16} />
+                        <button 
+                          onClick={() => handleDelete(subAdmin)}
+                          disabled={deletingId === subAdmin.id}
+                          className={deletingId === subAdmin.id ? "cursor-not-allowed" : ""}
+                        >
+                          {deletingId === subAdmin.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border border-red-400 border-t-transparent"></div>
+                          ) : (
+                            <Trash2 className="text-red-400 hover:text-red-300" size={16} />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -600,7 +665,7 @@ const SubAdminManagementPage = () => {
                         Settings
                       </button>
                     </td> */}
-                  </motion.tr>
+                  </tr>
                 ))}
                 {currentSubAdmins.length === 0 && (
                   <tr>
@@ -888,9 +953,21 @@ const SubAdminManagementPage = () => {
                 </button>
                 <button
                   onClick={handleFormSubmit}
-                  className="px-3 py-1.5 bg-indigo-600 rounded-md hover:bg-indigo-700 text-sm"
+                  disabled={isSubmitting}
+                  className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 min-w-[80px] justify-center ${
+                    isSubmitting 
+                      ? "bg-indigo-400 cursor-not-allowed" 
+                      : "bg-indigo-600 hover:bg-indigo-700"
+                  }`}
                 >
-                  {formMode === "add" ? "Add" : "Update"}
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    formMode === "add" ? "Add" : "Update"
+                  )}
                 </button>
               </div>
             </div>
