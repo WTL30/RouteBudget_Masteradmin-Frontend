@@ -28,7 +28,7 @@ const AnalyticsDashboard = () => {
   useEffect(() => {
     const fetchRevenueData = async () => {
       try {
-        const response = await axios.get("https://masteradmin.routebudget.com/api/revenue")
+        const response = await axios.get("https://api.routebudget.com/api/revenue")
         console.log("Revenue Data:", response.data)
         setRevenueData(response.data)
       } catch (error) {
@@ -51,7 +51,7 @@ const AnalyticsDashboard = () => {
     const fetchExpenseData = async () => {
       try {
         setExpenseLoading(true)
-        const response = await axios.get("https://masteradmin.routebudget.com/api/admin/subadmin-expenses")
+        const response = await axios.get("https://api.routebudget.com/api/admin/subadmin-expenses")
 
         console.log("Expense API Response:", response.data)
 

@@ -178,10 +178,10 @@ export default function NotificationsPage() {
     const fetchAdmins = async () => {
       try {
         const trialRes = await axios.get(
-          "https://masteradmin.routebudget.com/api/admin/get-free-trial-subAdmins"
+          "https://api.routebudget.com/api/admin/get-free-trial-subAdmins"
         );
         const paidRes = await axios.get(
-          "https://masteradmin.routebudget.com/api/admin/get-paid-subAdmins"
+          "https://api.routebudget.com/api/admin/get-paid-subAdmins"
         );
 
         if (trialRes.data.success) setTrialAdmins(trialRes.data.subAdmins);
@@ -198,7 +198,7 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
       try {
         const res = await axios.get(
-          "https://masteradmin.routebudget.com/api/notifications/list"
+          "https://api.routebudget.com/api/notifications/list"
         );
         if (res.data.success) {
           setSentNotifications(res.data.notifications);
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
       }
 
       const res = await axios.post(
-        "https://masteradmin.routebudget.com/api/notifications/send",
+        "https://api.routebudget.com/api/notifications/send",
         {
           recipientId,
           recipientType,

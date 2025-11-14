@@ -68,7 +68,7 @@ const SubAdminManagementPage = () => {
   const fetchSubAdmins = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await axios.get("https://masteradmin.routebudget.com/api/admin/getAllSubAdmins")
+      const response = await axios.get("https://api.routebudget.com/api/admin/getAllSubAdmins")
       if (response.status === 200) {
         setSubAdmins(response.data.subAdmins || [])
       }
@@ -170,7 +170,7 @@ const SubAdminManagementPage = () => {
           : sa
       ))
       
-      const res = await axios.put(`https://masteradmin.routebudget.com/api/admin/toggle-block/${id}`)
+      const res = await axios.put(`https://api.routebudget.com/api/admin/toggle-block/${id}`)
       if (res.status === 200) {
         toast.success(`Sub-admin ${res.data.status}`)
         // No need to fetch again - already updated optimistically
@@ -348,8 +348,8 @@ const SubAdminManagementPage = () => {
 
       const endpoint =
         formMode === "add"
-          ? "https://masteradmin.routebudget.com/api/admin/addNewSubAdmin"
-          : `https://masteradmin.routebudget.com/api/admin/updateSubAdmin/${formData.id}`
+          ? "https://api.routebudget.com/api/admin/addNewSubAdmin"
+          : `https://api.routebudget.com/api/admin/updateSubAdmin/${formData.id}`
 
       const response = await axios({
         method: formMode === "add" ? "post" : "put",
@@ -452,7 +452,7 @@ const SubAdminManagementPage = () => {
         const originalSubAdmins = [...subAdmins]
         setSubAdmins(prev => prev.filter(sa => sa.id !== subAdmin.id))
         
-        const response = await axios.delete(`https://masteradmin.routebudget.com/api/admin/deleteSubAdmin/${subAdmin.id}`)
+        const response = await axios.delete(`https://api.routebudget.com/api/admin/deleteSubAdmin/${subAdmin.id}`)
         
         if (response.status === 200) {
           toast.success("Sub-admin deleted successfully!")
