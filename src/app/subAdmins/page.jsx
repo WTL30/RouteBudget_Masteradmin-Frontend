@@ -1,4 +1,3 @@
-
 "use client"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import axios from "axios"
@@ -39,6 +38,10 @@ const SubAdminManagementPage = () => {
     phone: "",
     companyInfo: "",
   })
+
+  // Package selection state (for subscriptionCabLimit)
+  const [packageOption, setPackageOption] = useState("") // "5","10","20","30","50","custom" or ""
+  const [customPackageValue, setCustomPackageValue] = useState("")
 
   // Store the actual file object separately
   const [profileImageFile, setProfileImageFile] = useState(null)
@@ -201,6 +204,8 @@ const SubAdminManagementPage = () => {
       phone: "",
       companyInfo: "",
     })
+    setPackageOption("")
+    setCustomPackageValue("")
     setProfileImageFile(null)
     setProfileImagePreview("")
     setCompanyLogoFile(null)
@@ -225,6 +230,18 @@ const SubAdminManagementPage = () => {
       companyInfo: subAdmin.companyInfo || "",
       companyPrefix: subAdmin.companyPrefix || "",
     })
+    // Prefill package selection for edit
+    const limit = Number(subAdmin.subscriptionCabLimit)
+    if ([5,10,20,30,50].includes(limit)) {
+      setPackageOption(String(limit))
+      setCustomPackageValue("")
+    } else if (Number.isFinite(limit) && limit > 0) {
+      setPackageOption("custom")
+      setCustomPackageValue(String(limit))
+    } else {
+      setPackageOption("")
+      setCustomPackageValue("")
+    }
     setIsAddEditModalOpen(true)
   }, [])
 
@@ -299,6 +316,23 @@ const SubAdminManagementPage = () => {
       formDataToSend.append("companyInfo", formData.companyInfo || "")
       formDataToSend.append("companyPrefix", formData.companyPrefix || "")
 
+      // Compute subscriptionCabLimit from package selection
+      let selectedLimit = undefined
+      if (packageOption === "custom") {
+        const n = Number(customPackageValue)
+        if (!Number.isFinite(n) || n < 0) {
+          toast.error("Enter a valid custom package number")
+          setIsSubmitting(false)
+          return
+        }
+        selectedLimit = Math.floor(n)
+      } else if (["5","10","20","30","50"].includes(packageOption)) {
+        selectedLimit = Number(packageOption)
+      }
+      if (selectedLimit !== undefined) {
+        formDataToSend.append("subscriptionCabLimit", String(selectedLimit))
+      }
+
       // Add file fields to FormData if they exist
       if (profileImageFile) {
         formDataToSend.append("profileImage", profileImageFile)
@@ -330,22 +364,30 @@ const SubAdminManagementPage = () => {
         toast.success(`Sub-admin ${formMode === "add" ? "created" : "updated"} successfully!`)
         
         if (formMode === "add") {
-          // ✅ Optimistic update for new admin - add to list immediately
-          const newSubAdmin = response.data.subAdmin || {
+          // Optimistic update for new admin - add to list immediately
+          const newSubAdmin = response.data.newSubAdmin || response.data.subAdmin || {
             id: response.data.id || Date.now(),
             ...formData,
             createdAt: new Date().toISOString()
           }
+          if (selectedLimit !== undefined) newSubAdmin.subscriptionCabLimit = selectedLimit
           setSubAdmins(prev => [newSubAdmin, ...prev])
         } else {
-          // ✅ Optimistic update for edit - update existing item
-          setSubAdmins(prev => prev.map(sa => 
-            sa.id === formData.id ? { ...sa, ...formData } : sa
-          ))
+          // Optimistic update for edit - update existing item
+          const updatedFromServer = response.data.subAdmin || null
+          setSubAdmins(prev => prev.map(sa => {
+            const same = String(sa.id) === String(formData.id)
+            if (same) {
+              const updated = updatedFromServer ? { ...sa, ...updatedFromServer } : { ...sa, ...formData }
+              if (selectedLimit !== undefined) updated.subscriptionCabLimit = selectedLimit
+              return updated
+            }
+            return sa
+          }))
         }
         
         setIsAddEditModalOpen(false)
-        // ✅ Fetch in background to sync with server (optional)
+        // Fetch in background to sync with server (optional)
         fetchSubAdmins()
       }
     } catch (error) {
@@ -362,7 +404,7 @@ const SubAdminManagementPage = () => {
     } finally {
       setIsSubmitting(false) // Stop loading
     }
-  }, [formData, formMode, profileImageFile, companyLogoFile, signature, fetchSubAdmins])
+  }, [formData, formMode, profileImageFile, companyLogoFile, signature, fetchSubAdmins, packageOption, customPackageValue])
 
   // Reset form
   const handleFormReset = () => {
@@ -888,7 +930,36 @@ const SubAdminManagementPage = () => {
                     </select>
                   </div>
 
-
+                  {/* Package (subscriptionCabLimit) */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium mb-1">Package (Vehicle Limit)</label>
+                    <div className="flex gap-2 flex-wrap items-center">
+                      <select
+                        value={packageOption}
+                        onChange={(e) => setPackageOption(e.target.value)}
+                        className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-sm"
+                      >
+                        <option value="">Select package</option>
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                      {packageOption === "custom" && (
+                        <input
+                          type="number"
+                          min="0"
+                          value={customPackageValue}
+                          onChange={(e) => setCustomPackageValue(e.target.value)}
+                          placeholder="Enter custom number"
+                          className="w-40 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-sm"
+                        />
+                      )}
+                    </div>
+                    {formMode === 'edit' && (typeof subAdmins?.find?.(() => false) !== 'function') && null}
+                  </div>
 
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium mb-1">Company Logo</label>
