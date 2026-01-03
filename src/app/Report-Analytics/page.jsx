@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
 import { Car, ChevronDown, Download } from "lucide-react"
 import { saveAs } from "file-saver"
-import * as XLSX from "xlsx"
+import ExcelJS from "exceljs"
 
 const AnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState("expenses")
@@ -89,52 +89,63 @@ const AnalyticsDashboard = () => {
   }, [isBrowser])
 
   // Export data to Excel
-  const exportToExcel = () => {
-    if (!isBrowser) return
+// Export data to Excel using exceljs
+const exportToExcel = async () => {
+  if (!isBrowser) return
 
-    if (companyExpenses.length === 0) {
-      alert("No data to export!")
-      return
-    }
-
-    try {
-      // Format Data for company expenses
-      const formattedData = companyExpenses.map((expense, index) => ({
-        ID: index + 1,
-        "Company Name": expense.company,
-        "Total Cabs": expense.totalCabs,
-        "Total Drivers": expense.totalDrivers,
-        "Total Expense (₹)": expense.amount
-      }))
-
-      // Add a row for totals
-      formattedData.push({
-        ID: "",
-        "Company Name": "Totals",
-        "Total Expense (₹)": totalExpense,
-      })
-
-      // Convert JSON to Worksheet
-      const worksheet = XLSX.utils.json_to_sheet(formattedData)
-
-      // Create Workbook and add Worksheet
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, `Company Expenses (${timePeriod})`)
-
-      // Convert to Blob & Trigger Download
-      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
-      const data = new Blob([excelBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      })
-
-      saveAs(data, `CompanyExpensesReport_${timePeriod}.xlsx`)
-
-      alert("Export successful!")
-    } catch (error) {
-      console.error("Error exporting data:", error)
-      alert("Failed to export data: " + (error.message || "Unknown error"))
-    }
+  if (companyExpenses.length === 0) {
+    alert("No data to export!")
+    return
   }
+
+  try {
+    // Prepare formatted rows
+    const formattedData = companyExpenses.map((expense, index) => ({
+      ID: index + 1,
+      "Company Name": expense.company,
+      "Total Cabs": expense.totalCabs,
+      "Total Drivers": expense.totalDrivers,
+      "Total Expense (₹)": expense.amount,
+    }))
+
+    // Add totals row
+    formattedData.push({
+      ID: "",
+      "Company Name": "Totals",
+      "Total Cabs": "",
+      "Total Drivers": "",
+      "Total Expense (₹)": totalExpense,
+    })
+
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet(`Company Expenses (${timePeriod})`)
+
+    // Define columns to match existing headers
+    worksheet.columns = [
+      { header: "ID", key: "ID", width: 6 },
+      { header: "Company Name", key: "Company Name", width: 28 },
+      { header: "Total Cabs", key: "Total Cabs", width: 14 },
+      { header: "Total Drivers", key: "Total Drivers", width: 16 },
+      { header: "Total Expense (₹)", key: "Total Expense (₹)", width: 22 },
+    ]
+
+    // Append rows
+    worksheet.addRows(formattedData)
+
+    // Generate file & download
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+    saveAs(blob, `CompanyExpensesReport_${timePeriod}.xlsx`)
+
+    alert("Export successful!")
+  } catch (error) {
+    console.error("Error exporting data:", error)
+    alert("Failed to export data: " + (error.message || "Unknown error"))
+  }
+}
 
   // Generate pie chart data from company expenses
   const generatePieChartData = () => {
